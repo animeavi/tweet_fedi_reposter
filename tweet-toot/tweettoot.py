@@ -119,7 +119,7 @@ class TweetToot:
 
         data = requests.get(self.twitter_url)
         html = BeautifulSoup(data.text, "html.parser")
-        timeline = html.select("#timeline li.stream-item")
+        timeline = html.select("div.tweet-text")
 
         if timeline is None:
 
@@ -136,16 +136,12 @@ class TweetToot:
 
             try:
 
-                tweet_time = int(
-                    tweet.select("span._timestamp")[0].attrs["data-time-ms"]
-                )
+                tweet_time = int(tweet.attrs["data-id"])
 
                 if tweet_time > last_timestamp:
 
-                    tweet_id = tweet["data-item-id"]
-                    tweet_text = (
-                        tweet.select("p.tweet-text")[0].get_text().encode("utf-8")
-                    )
+                    tweet_id = tweet.attrs["data-id"]
+                    tweet_text = tweet.select("div > div")[0].get_text()
 
                     tweets[tweet_time] = {"id": tweet_id, "text": tweet_text}
 
