@@ -1,3 +1,4 @@
 {
-    "python.pythonPath": "venv/bin/python3"
+    "python.pythonPath": "/home/ayushsharma/dev/tweet-toot/venv/bin/python3",
+    "python.formatting.provider": "black"
 }
