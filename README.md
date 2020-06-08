@@ -33,7 +33,7 @@ Once you have the above, just follow these steps:
 
 For example:
 
-- `TT_SOURCE_TWITTER_URL` = https://twitter.com/internetofshit
+- `TT_SOURCE_TWITTER_URL` = https://mobile.twitter.com/internetofshit
 - `TT_HOST_INSTANCE` = https://botsin.space
 - `TT_APP_SECURE_TOKEN` = XXXXX-XXXXX-XXXXX-XXXXX-XXXXX'
 - `TT_CACHE_PATH` = `/tmp`
@@ -51,13 +51,49 @@ python run.py
 
 If all goes well, you'll see something like this:
 ```bash
-2020-04-20 17:42:45,880 - social - INFO - get_tweets() => Fetched tweets for https://twitter.com/internetofshit.
-2020-04-20 17:42:45,976 - __main__ - INFO - __main__ => 20 tweets fetched.
-2020-04-20 17:42:45,977 - social - INFO - toot_the_tweet() => New tweet 1251661782457991168 => "b'This thread starts out as some innocent  hacking and ends up with a bunch of HTTP servers running on a tv remote https://twitter.com/Foone/status/1251395931351609347\xc2\xa0\xe2\x80\xa6'".
-2020-04-20 17:42:47,142 - social - INFO - toot_the_tweet() => OK. Posted tweet 1251661782457991168 to Mastodon.
-2020-04-20 17:42:47,142 - social - INFO - toot_the_tweet() => Response: {"id":"104032145682490500","created_at":"2020-04-20T17:42:46.777Z","in_reply_to_id":null,"in_reply_to_account_id":null,"sensitive":false,"spoiler_text":"","visibility":"public","language":"en","uri":"https://botsin.space/users/motherofsarcasm/statuses/104032145682490500","url":"https://botsin.space/@motherofsarcasm/104032145682490500","replies_count":0,"reblogs_count":0,"favourites_count":0,"favourited":false,"reblogged":false,"muted":false,"bookmarked":false,"pinned":false,"content":"\u003cp\u003eThis thread starts out as some innocent  hacking and ends up with a bunch of HTTP servers running on a tv remote \u003ca href=\"https://twitter.com/Foone/status/1251395931351609347\" rel=\"nofollow noopener noreferrer\" target=\"_blank\"\u003e\u003cspan class=\"invisible\"\u003ehttps://\u003c/span\u003e\u003cspan class=\"ellipsis\"\u003etwitter.com/Foone/status/12513\u003c/span\u003e\u003cspan class=\"invisible\"\u003e95931351609347\u003c/span\u003e\u003c/a\u003e …\u003c/p\u003e","reblog":null,"application":{"name":"TweetToot","website":""},"account":{"id":"58348","username":"motherofsarcasm","acct":"motherofsarcasm","display_name":"Mother Of Sarcasm","locked":false,"bot":true,"discoverable":null,"group":false,"created_at":"2018-08-20T15:07:42.747Z","note":"\u003cp\u003eFOLLOWS YOU\u003c/p\u003e","url":"https://botsin.space/@motherofsarcasm","avatar":"https://files.botsin.space/accounts/avatars/000/058/348/original/658f78e1f07e94fa.jpg","avatar_static":"https://files.botsin.space/accounts/avatars/000/058/348/original/658f78e1f07e94fa.jpg","header":"https://botsin.space/headers/original/missing.png","header_static":"https://botsin.space/headers/original/missing.png","followers_count":3,"following_count":1,"statuses_count":1156,"last_status_at":"2020-04-20","emojis":[],"fields":[{"name":"Name","value":"Mother Of Sarcasm","verified_at":null},{"name":"Owner","value":"ayushsharma22@mastodon.technology","verified_at":null},{"name":"Twitter Relay","value":"\u003ca href=\"https://twitter.com/SarcasmMother\" rel=\"me nofollow noopener noreferrer\" target=\"_blank\"\u003e\u003cspan class=\"invisible\"\u003ehttps://\u003c/span\u003e\u003cspan class=\"\"\u003etwitter.com/SarcasmMother\u003c/span\u003e\u003cspan class=\"invisible\"\u003e\u003c/span\u003e\u003c/a\u003e","verified_at":null}]},"media_attachments":[],"mentions":[],"tags":[],"emojis":[],"card":null,"poll":null}
-2020-04-20 17:42:47,142 - __main__ - INFO - __main__ => Tooted "b'This thread starts out as some innocent  hacking and ends up with a bunch of HTTP servers running on a tv remote https://twitter.com/Foone/status/1251395931351609347\xc2\xa0\xe2\x80\xa6'"
-2020-04-20 17:42:47,142 - __main__ - INFO - __main__ => Tooting less is tooting more. Sleeping...
+2020-06-08 12:51:38,266 - __main__ - INFO - __main__ => Mode: one-to-one
+2020-06-08 12:51:38,266 - tweettoot - INFO - relay() => Init relay from https://mobile.twitter.com/internetofshit to https://botsin.space. State file /tmp/tt_c13170b9771b0ab9736b1c2680a209347c65805c
+2020-06-08 12:51:39,206 - tweettoot - INFO - get_tweets() => Fetched 20 tweets for https://mobile.twitter.com/internetofshit.
+2020-06-08 12:51:39,208 - tweettoot - INFO - relay() => Tweeting 1266034895752777738 to https://botsin.space
+2020-06-08 12:51:40,134 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1266034895752777738 to https://botsin.space.
+2020-06-08 12:51:40,135 - tweettoot - INFO - relay() => Tweeting 1265701098934984707 to https://botsin.space
+2020-06-08 12:51:41,116 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1265701098934984707 to https://botsin.space.
+2020-06-08 12:51:41,117 - tweettoot - INFO - relay() => Tweeting 1265046939235729408 to https://botsin.space
+2020-06-08 12:51:42,019 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1265046939235729408 to https://botsin.space.
+2020-06-08 12:51:42,020 - tweettoot - INFO - relay() => Tweeting 1265046671836286977 to https://botsin.space
+2020-06-08 12:51:42,936 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1265046671836286977 to https://botsin.space.
+2020-06-08 12:51:42,936 - tweettoot - INFO - relay() => Tweeting 1265025125688193024 to https://botsin.space
+2020-06-08 12:51:43,912 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1265025125688193024 to https://botsin.space.
+2020-06-08 12:51:43,913 - tweettoot - INFO - relay() => Tweeting 1265002282627850240 to https://botsin.space
+2020-06-08 12:51:44,850 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1265002282627850240 to https://botsin.space.
+2020-06-08 12:51:44,851 - tweettoot - INFO - relay() => Tweeting 1263957702067261445 to https://botsin.space
+2020-06-08 12:51:45,770 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263957702067261445 to https://botsin.space.
+2020-06-08 12:51:45,771 - tweettoot - INFO - relay() => Tweeting 1263670113481428992 to https://botsin.space
+2020-06-08 12:51:46,719 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263670113481428992 to https://botsin.space.
+2020-06-08 12:51:46,720 - tweettoot - INFO - relay() => Tweeting 1263670025455624195 to https://botsin.space
+2020-06-08 12:51:47,670 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263670025455624195 to https://botsin.space.
+2020-06-08 12:51:47,671 - tweettoot - INFO - relay() => Tweeting 1263669246799872000 to https://botsin.space
+2020-06-08 12:51:48,624 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263669246799872000 to https://botsin.space.
+2020-06-08 12:51:48,625 - tweettoot - INFO - relay() => Tweeting 1263668972978933768 to https://botsin.space
+2020-06-08 12:51:49,548 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263668972978933768 to https://botsin.space.
+2020-06-08 12:51:49,549 - tweettoot - INFO - relay() => Tweeting 1263668670070390784 to https://botsin.space
+2020-06-08 12:51:50,473 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263668670070390784 to https://botsin.space.
+2020-06-08 12:51:50,474 - tweettoot - INFO - relay() => Tweeting 1263474205502423043 to https://botsin.space
+2020-06-08 12:51:51,406 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263474205502423043 to https://botsin.space.
+2020-06-08 12:51:51,407 - tweettoot - INFO - relay() => Tweeting 1263323591745159168 to https://botsin.space
+2020-06-08 12:51:52,347 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263323591745159168 to https://botsin.space.
+2020-06-08 12:51:52,347 - tweettoot - INFO - relay() => Tweeting 1263323511390642178 to https://botsin.space
+2020-06-08 12:51:53,376 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263323511390642178 to https://botsin.space.
+2020-06-08 12:51:53,376 - tweettoot - INFO - relay() => Tweeting 1263203533593219077 to https://botsin.space
+2020-06-08 12:51:54,328 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263203533593219077 to https://botsin.space.
+2020-06-08 12:51:54,329 - tweettoot - INFO - relay() => Tweeting 1263141848517881856 to https://botsin.space
+2020-06-08 12:51:55,384 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263141848517881856 to https://botsin.space.
+2020-06-08 12:51:55,384 - tweettoot - INFO - relay() => Tweeting 1263140615535108107 to https://botsin.space
+2020-06-08 12:51:56,338 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1263140615535108107 to https://botsin.space.
+2020-06-08 12:51:56,339 - tweettoot - INFO - relay() => Tweeting 1262970558154588160 to https://botsin.space
+2020-06-08 12:51:57,269 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1262970558154588160 to https://botsin.space.
+2020-06-08 12:51:57,270 - tweettoot - INFO - relay() => Tweeting 1262545551737917440 to https://botsin.space
+2020-06-08 12:51:58,235 - tweettoot - INFO - toot_the_tweet() => OK. Tooted 1262545551737917440 to https://botsin.space.
 ```
 
 ---
