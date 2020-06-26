@@ -141,7 +141,7 @@ class TweetToot:
                 if tweet_time > last_timestamp:
 
                     tweet_id = tweet.attrs["data-id"]
-                    tweet_text = tweet.select("div > div")[0].get_text()
+                    tweet_text = tweet.select("div > div")[0]
 
                     tweets[tweet_time] = {"id": tweet_id, "text": tweet_text}
 
@@ -214,6 +214,9 @@ class TweetToot:
     def _toot_the_tweet(
         self, mastodon_url: str, tweet_id: str, tweet_body: str, tweet_time: int
     ):
+
+        print(tweet_body)
+        return True
 
         """ Receieve a dictionary containing Tweet ID and text... and TOOT!
         This function relies on the requests library to post the content to your Mastodon account (human or bot).
