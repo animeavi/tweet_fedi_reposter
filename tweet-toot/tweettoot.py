@@ -215,9 +215,6 @@ class TweetToot:
         self, mastodon_url: str, tweet_id: str, tweet_body: str, tweet_time: int
     ):
 
-        print(tweet_body)
-        return True
-
         """ Receieve a dictionary containing Tweet ID and text... and TOOT!
         This function relies on the requests library to post the content to your Mastodon account (human or bot).
         A boolean success status is returned.
