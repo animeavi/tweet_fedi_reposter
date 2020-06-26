@@ -40,6 +40,8 @@ if __name__ == "__main__":
 
         logger.info(f"__main__ => Mode: {mode}")
 
+        twitter_url = [url.replace('https://twitter', 'https://mobile.twitter') for url in  twitter_url]
+
         if mode == "one-to-one":
 
             # In this mode, the first Twitter URL is picked and it is relayed to the first Mastodon URL/Token combination. This repeats until we run out of Twitter URLs or Mastodon URLs. The number of Twitter accounts must be equal to the number of Mastodon URLs/tokens to avoid wierdness.
