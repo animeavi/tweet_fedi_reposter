@@ -235,7 +235,7 @@ class TweetToot:
     
         :rtype: bool
         """
-
+        
         headers = {}
         headers["Authorization"] = f"Bearer {self.mastodon_token}"
         headers["Idempotency-Key"] = tweet_id
@@ -262,6 +262,6 @@ class TweetToot:
             logger.error(
                 f"toot_the_tweet() => Could not toot {tweet_id} to {self.mastodon_url}."
             )
-            logger.debug(f"toot_the_tweet() => Response: {response.text}")
+            logger.error(f"toot_the_tweet() => Response: {response.text}")
 
             return False
