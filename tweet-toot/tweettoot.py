@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import html
 import logging
 from collections import OrderedDict
 from hashlib import sha1
