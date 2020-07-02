@@ -142,7 +142,15 @@ class TweetToot:
                 if tweet_time > last_timestamp:
 
                     tweet_id = tweet.attrs["data-id"]
-                    tweet_text = str(tweet.select("div > div")[0])
+                    tweet_text = tweet.select("div > div")[0].get_text()
+
+                    tmp = tweet.select("div > div .twitter_external_link")
+                    urls = []
+                    for url in tmp:
+                        
+                        urls.append(url.attrs["data-url"])
+
+                    tweet_text += ' '.join(urls)
 
                     tweets[tweet_time] = {"id": tweet_id, "text": tweet_text}
 
@@ -242,7 +250,7 @@ class TweetToot:
         headers["Idempotency-Key"] = tweet_id
 
         data = {}
-        data["status"] = html.escape(tweet_body)
+        data["status"] = tweet_body
         data["visibility"] = "public"
 
         response = requests.post(
