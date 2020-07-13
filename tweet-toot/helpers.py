@@ -9,7 +9,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-base_path = os.path.join(os.path.dirname(__file__))
+base_path = os.path.dirname(__file__)
 
 def _config(key):
     """ Return configuration values from the config.json file or the environment.
