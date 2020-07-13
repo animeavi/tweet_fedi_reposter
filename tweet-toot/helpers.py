@@ -9,6 +9,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+base_path = os.path.join(os.path.dirname(__file__))
 
 def _config(key):
     """ Return configuration values from the config.json file or the environment.
@@ -21,7 +22,7 @@ def _config(key):
 
         return os.environ[key]
 
-    my_file = _read_file("config.json")
+    my_file = _read_file(os.path.join(base_path, "config.json"))
     if not my_file:
 
         logger.critical("Main config.json file not found. Exiting.")
