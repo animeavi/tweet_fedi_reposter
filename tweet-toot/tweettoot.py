@@ -143,6 +143,13 @@ class TweetToot:
                     tweet_id = tweet.attrs["data-id"]
                     tweet_text = tweet.select("div > div")[0]
 
+                    # fix urls in links
+                    a_tags = tweet.select("a.twitter_external_link")
+                    if len(a_tags) > 0:
+                        for at in a_tags:
+                            url = f'{at["data-url"]} '
+                            tweet_text = str(tweet_text).replace(str(at), url)
+
                     tweets[tweet_time] = {"id": tweet_id, "text": tweet_text}
 
             except Exception as e:
