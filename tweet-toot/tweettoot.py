@@ -144,12 +144,6 @@ class TweetToot:
                     tweet_text = tweet.select("div > div")[0].get_text()
 
                     tmp = tweet.select("div > div .twitter_external_link")
-                    urls = []
-                    for url in tmp:
-                        
-                        urls.append(url.attrs["data-url"])
-
-                    tweet_text += ' '.join(urls)
 
                     # fix urls in links
                     a_tags = tweet.select("a.twitter_external_link")
