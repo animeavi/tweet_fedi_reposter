@@ -4,6 +4,7 @@ from mastodon import Mastodon
 from tweepy import API
 from tweepy import OAuthHandler
 import helpers
+import html
 import logging
 import mimetypes
 import os
@@ -26,12 +27,13 @@ class TweetToot:
     twitter_user_key = ""
     twitter_user_secret = ""
     strip_urls = False
+    include_rts = False
     posted_ids = []
 
     def __init__(self, app_name: str, twitter_url: str, mastodon_url: str, mastodon_token: str,
                 mastodon_client_id: str, mastodon_client_token: str, twitter_user_id: str,
                 twitter_api_key: str, twitter_api_secret: str, twitter_user_key: str,
-                twitter_user_secret: str, strip_urls: bool):
+                twitter_user_secret: str, strip_urls: bool, include_rts: bool):
         self.app_name = app_name
         self.twitter_url = twitter_url
         self.mastodon_url = mastodon_url
@@ -44,6 +46,7 @@ class TweetToot:
         self.twitter_user_key = twitter_user_key
         self.twitter_user_secret = twitter_user_secret
         self.strip_urls = strip_urls
+        self.include_rts = include_rts
         self.posted_ids = self.read_posted_ids()
  
     def relay(self):
@@ -71,8 +74,9 @@ class TweetToot:
         twitter_api = API(auth)
 
         tweet = self.get_latest_tweet(twitter_api)
+        is_rt = hasattr(tweet, 'retweeted_status')
 
-        if hasattr(tweet, 'retweeted_status'):
+        if not self.include_rts and is_rt:
             logger.info("RT detected, skipping")
             return True
 
@@ -81,11 +85,13 @@ class TweetToot:
             logger.info("Already posted, skipping")
             return True;
 
-        tweet_text = self.get_tweet_text(tweet, twitter_api)
+        tweet_text = self.get_tweet_text(tweet, twitter_api, is_rt)
+        tweet_text = html.unescape(tweet_text)
+
         if self.strip_urls:
             tweet_text = self.remove_urls(tweet_text)
 
-        tweet_media = self.get_tweet_media(tweet, twitter_api)
+        tweet_media = self.get_tweet_media(tweet, twitter_api, is_rt)
 
         # Only initialize the Mastodon API if we find something
         mastodon_api = Mastodon(
@@ -116,12 +122,20 @@ class TweetToot:
 
         return tweet
 
-    def get_tweet_media(self, tweet, twitter_api):
+    def get_tweet_media(self, tweet, twitter_api, is_rt):
         media_list = []
 
-        if 'media' in tweet.entities:
+        if is_rt :
+            if 'media' in tweet._json['retweeted_status']['entities']:
+                for media in tweet._json['retweeted_status']['extended_entities']['media']:
+                    if media['type'] == 'video' or media['type'] == 'animated_gif':
+                        media_list.append(media['video_info']['variants'][0]['url'])
+                        break
+                    else:
+                        media_list.append(media['media_url'])
+        elif 'media' in tweet.entities:
             for media in tweet.extended_entities['media']:
-                if media['type'] == 'video':
+                if media['type'] == 'video' or media['type'] == 'animated_gif':
                     media_list.append(media['video_info']['variants'][0]['url'])
                     break
                 else:
@@ -129,14 +143,20 @@ class TweetToot:
 
         return media_list
 
-    def get_tweet_text(self, tweet, twitter_api):
+    def get_tweet_text(self, tweet, twitter_api, is_rt):
         text = ""
 
         remove_media_url = ""
         if 'media' in tweet.entities:
             remove_media_url = tweet.extended_entities['media'][0]['url']
 
-        if hasattr(tweet, 'full_text'):
+        if is_rt:
+            text = tweet._json['retweeted_status']['full_text']
+            text = "RT @" + tweet._json['retweeted_status']['user']['screen_name'] + "@twitter.com: " + text
+            if 'extended_entities' in tweet._json['retweeted_status']:
+                if 'media' in tweet._json['retweeted_status']['extended_entities']:
+                    remove_media_url = tweet._json['retweeted_status']['extended_entities']['media'][0]['url']
+        elif hasattr(tweet, 'full_text'):
             text = tweet.full_text
         elif hasattr(tweet, 'text'):
             text = tweet.text

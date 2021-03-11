@@ -37,8 +37,11 @@ def runJob():
         twitter_user_key = helpers._config("TT_TWITTER_TOKEN", config)
         twitter_user_secret = helpers._config("TT_TWITTER_TOKEN_SECRET", config)
         strip_urls = False
+        include_rts = False
         if (helpers._config("TT_STRIP_URLS", config).lower() == "yes"):
             strip_urls = True
+        if (helpers._config("TT_INCLUDE_RTS", config).lower() == "yes"):
+            include_rts = True
 
         try:
             job = tweettoot.TweetToot(
@@ -53,7 +56,8 @@ def runJob():
                 twitter_api_secret = twitter_api_secret,
                 twitter_user_key = twitter_user_key,
                 twitter_user_secret = twitter_user_secret,
-                strip_urls = strip_urls
+                strip_urls = strip_urls,
+                include_rts = include_rts
             )
             job.relay()
         except Exception as e:
