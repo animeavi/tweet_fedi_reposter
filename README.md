@@ -5,5 +5,5 @@ I basically changed the whole thing, some of it for worse (less features).
 - Can now grab images and videos to repost
 
 ## TODO
-Find a way to still grab URLs but remove only the URL that self-references the media in the tweet
-Add support multiple configs/accounts back once I have a good way to do it
+- ~~Find a way to still grab URLs but remove only the URL that self-references the media in the tweet~~
+- Add support multiple configs/accounts back once I have a good way to do it

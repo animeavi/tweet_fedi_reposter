@@ -10,6 +10,6 @@
     "TT_APP_SECURE_TOKEN": "XXXXX",
     "TT_APP_CLIENT_ID": "XXXXX",
     "TT_APP_CLIENT_TOKEN": "XXXXX",
-    "TT_STRIP_URLS": true,
+    "TT_STRIP_URLS": "No",
     "TT_RUN_EVERY_X_MINUTES": 15
 }

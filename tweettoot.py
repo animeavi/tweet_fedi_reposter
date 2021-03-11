@@ -25,7 +25,7 @@ class TweetToot:
     twitter_api_secret = ""
     twitter_user_key = ""
     twitter_user_secret = ""
-    strip_urls = True
+    strip_urls = False
     posted_ids = []
 
     def __init__(self, app_name: str, twitter_url: str, mastodon_url: str, mastodon_token: str,
@@ -87,10 +87,6 @@ class TweetToot:
 
         tweet_media = self.get_tweet_media(tweet, twitter_api)
 
-        if not tweet_media:
-            logger.info("No media found, skipping")
-            return True
-
         # Only initialize the Mastodon API if we find something
         mastodon_api = Mastodon(
             client_id=self.mastodon_client_id,
@@ -135,12 +131,17 @@ class TweetToot:
 
     def get_tweet_text(self, tweet, twitter_api):
         text = ""
-        if not hasattr(tweet, 'full_text'):
-            return text
 
-        text = tweet.full_text
+        remove_media_url = ""
+        if 'media' in tweet.entities:
+            remove_media_url = tweet.extended_entities['media'][0]['url']
 
-        return text
+        if hasattr(tweet, 'full_text'):
+            text = tweet.full_text
+        elif hasattr(tweet, 'text'):
+            text = tweet.text
+
+        return text.replace(remove_media_url, "")
 
     def transfer_media(self, media_url, mastodon_api):
         media_id = -1

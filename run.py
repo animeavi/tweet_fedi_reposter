@@ -26,8 +26,11 @@ twitter_api_key = helpers._config("TT_TWITTER_CONSUMER_KEY")
 twitter_api_secret = helpers._config("TT_TWITTER_CONSUMER_SECRET")
 twitter_user_key = helpers._config("TT_TWITTER_TOKEN")
 twitter_user_secret = helpers._config("TT_TWITTER_TOKEN_SECRET")
-strip_urls = helpers._config("TT_STRIP_URLS")
 every_x_minutes = helpers._config("TT_RUN_EVERY_X_MINUTES")
+
+strip_urls = False
+if (helpers._config("TT_STRIP_URLS").lower() == "yes"):
+    strip_urls = True
 
 twitter_url = twitter_url.replace('https://twitter', 'https://mobile.twitter')
 
