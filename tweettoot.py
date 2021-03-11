@@ -29,6 +29,7 @@ class TweetToot:
     strip_urls = False
     include_rts = False
     posted_ids = []
+    twitter_username_re = re.compile(r'(?<=^|(?<=[^a-zA-Z0-9-\.]))@([A-Za-z0-9_]+)')
 
     def __init__(self, app_name: str, twitter_url: str, mastodon_url: str, mastodon_token: str,
                 mastodon_client_id: str, mastodon_client_token: str, twitter_user_id: str,
@@ -87,6 +88,7 @@ class TweetToot:
 
         tweet_text = self.get_tweet_text(tweet, twitter_api, is_rt)
         tweet_text = html.unescape(tweet_text)
+        tweet_text = self.escape_usernames(tweet_text)
 
         if self.strip_urls:
             tweet_text = self.remove_urls(tweet_text)
@@ -152,7 +154,7 @@ class TweetToot:
 
         if is_rt:
             text = tweet._json['retweeted_status']['full_text']
-            text = "RT @" + tweet._json['retweeted_status']['user']['screen_name'] + "@twitter.com: " + text
+            text = "RT @" + tweet._json['retweeted_status']['user']['screen_name'] + ": " + text
             if 'extended_entities' in tweet._json['retweeted_status']:
                 if 'media' in tweet._json['retweeted_status']['extended_entities']:
                     remove_media_url = tweet._json['retweeted_status']['extended_entities']['media'][0]['url']
@@ -217,3 +219,10 @@ class TweetToot:
         self.posted_ids.append(id)
         with open("posted.ids", "a") as file_object:
             file_object.write("\n" + id)
+
+    def escape_usernames(self, text):
+        ats = re.findall(self.twitter_username_re, text)
+        for at in ats:
+            text = text.replace("@"+at, "@*"+at)
+
+        return text
