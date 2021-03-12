@@ -29,6 +29,7 @@ class TweetToot:
     strip_urls = False
     include_rts = False
     posted_ids = []
+    remove_url_re = r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b'
     twitter_username_re = re.compile(r'(?<=^|(?<=[^a-zA-Z0-9-\.]))@([A-Za-z0-9_]+)')
 
     def __init__(self, app_name: str, twitter_url: str, mastodon_url: str, mastodon_token: str,
@@ -49,7 +50,7 @@ class TweetToot:
         self.strip_urls = strip_urls
         self.include_rts = include_rts
         self.posted_ids = self.read_posted_ids()
- 
+
     def relay(self):
         if not self.app_name:
             logger.error(f"relay() => Application name in config is incorrect/empty.")
@@ -89,6 +90,7 @@ class TweetToot:
         tweet_text = self.get_tweet_text(tweet, twitter_api, is_rt)
         tweet_text = html.unescape(tweet_text)
         tweet_text = self.escape_usernames(tweet_text)
+        tweet_text = self.expand_urls(tweet, tweet_text, twitter_api, is_rt)
 
         if self.strip_urls:
             tweet_text = self.remove_urls(tweet_text)
@@ -124,19 +126,39 @@ class TweetToot:
 
         return tweet
 
+    def get_tweet_entities(self, tweet, twitter_api, is_rt, get_ext=True):
+        entities = None
+
+        if is_rt:
+            t = tweet._json['retweeted_status']
+            if get_ext and 'extended_entities' in t:
+                entities = t['extended_entities']
+            elif 'entities' in t:
+                entities = t['entities']
+        elif get_ext and 'extended_entities' in tweet._json:
+            entities = tweet.extended_entities
+        elif 'entities' in tweet._json:
+            entities = tweet.entities
+
+        return entities
+
     def get_tweet_media(self, tweet, twitter_api, is_rt):
         media_list = []
+        entities = self.get_tweet_entities(tweet, twitter_api, is_rt)
+
+        if entities is None:
+            return media_list
 
         if is_rt :
-            if 'media' in tweet._json['retweeted_status']['entities']:
-                for media in tweet._json['retweeted_status']['extended_entities']['media']:
+            if 'media' in entities:
+                for media in entities['media']:
                     if media['type'] == 'video' or media['type'] == 'animated_gif':
                         media_list.append(self.get_best_media(media['video_info']['variants']))
                         break
                     else:
                         media_list.append(media['media_url'])
-        elif 'media' in tweet.entities:
-            for media in tweet.extended_entities['media']:
+        elif 'media' in entities:
+            for media in entities['media']:
                 if media['type'] == 'video' or media['type'] == 'animated_gif':
                     media_list.append(self.get_best_media(media['video_info']['variants']))
                     break
@@ -161,23 +183,40 @@ class TweetToot:
 
     def get_tweet_text(self, tweet, twitter_api, is_rt):
         text = ""
-
         remove_media_url = ""
-        if 'media' in tweet.entities:
-            remove_media_url = tweet.extended_entities['media'][0]['url']
+        entities = self.get_tweet_entities(tweet, twitter_api, is_rt)
 
         if is_rt:
-            text = tweet._json['retweeted_status']['full_text']
-            text = "RT @" + tweet._json['retweeted_status']['user']['screen_name'] + ": " + text
-            if 'extended_entities' in tweet._json['retweeted_status']:
-                if 'media' in tweet._json['retweeted_status']['extended_entities']:
-                    remove_media_url = tweet._json['retweeted_status']['extended_entities']['media'][0]['url']
-        elif hasattr(tweet, 'full_text'):
-            text = tweet.full_text
-        elif hasattr(tweet, 'text'):
-            text = tweet.text
+            t = tweet._json['retweeted_status']
+            if 'full_text' in t:
+                text = t['full_text']
+            elif 'text' in t:
+                text = t['text']
+
+            text = "RT @" + t['user']['screen_name'] + ": " + text
+        else:
+            if hasattr(tweet, 'full_text'):
+                text = tweet.full_text
+            elif hasattr(tweet, 'text'):
+                text = tweet.text
+
+        if 'media' in entities:
+            remove_media_url = entities['media'][0]['url']
 
         return text.replace(remove_media_url, "")
+
+    def expand_urls(self, tweet, tweet_text, twitter_api, is_rt):
+        text = tweet_text
+        entities = self.get_tweet_entities(tweet, twitter_api, is_rt, False)
+
+        if entities is None:
+            return text
+
+        if 'urls' in entities:
+            for url in entities['urls']:
+                text = text.replace(url['url'], url['expanded_url'])
+
+        return text
 
     def transfer_media(self, media_url, mastodon_api):
         media_id = -1
@@ -217,13 +256,13 @@ class TweetToot:
         return post["id"]
 
     def remove_urls(self, text):
-        text = re.sub(r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b', '', text, flags=re.MULTILINE)
-        return text\
+        text = re.sub(remove_url_re, '', text, flags=re.MULTILINE)
+        return text
 
     def read_posted_ids(self):
         lines = []
-        with open("./posted.ids") as file:
-            for line in file: 
+        with open("posted.ids") as file:
+            for line in file:
                 line = line.strip()
                 lines.append(line)
 
