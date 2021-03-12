@@ -131,19 +131,33 @@ class TweetToot:
             if 'media' in tweet._json['retweeted_status']['entities']:
                 for media in tweet._json['retweeted_status']['extended_entities']['media']:
                     if media['type'] == 'video' or media['type'] == 'animated_gif':
-                        media_list.append(media['video_info']['variants'][0]['url'])
+                        media_list.append(self.get_best_media(media['video_info']['variants']))
                         break
                     else:
                         media_list.append(media['media_url'])
         elif 'media' in tweet.entities:
             for media in tweet.extended_entities['media']:
                 if media['type'] == 'video' or media['type'] == 'animated_gif':
-                    media_list.append(media['video_info']['variants'][0]['url'])
+                    media_list.append(self.get_best_media(media['video_info']['variants']))
                     break
                 else:
                     media_list.append(media['media_url'])
 
         return media_list
+
+    def get_best_media(self, media):
+        higher_bitrate = -1
+        media_url = ""
+
+        for video in media:
+            if (video['content_type'] == 'application/x-mpegURL'):
+                continue
+
+            if (video['bitrate'] > higher_bitrate):
+                higher_bitrate = video['bitrate']
+                media_url = video['url']
+
+        return media_url
 
     def get_tweet_text(self, tweet, twitter_api, is_rt):
         text = ""

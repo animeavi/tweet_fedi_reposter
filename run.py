@@ -6,6 +6,7 @@ import schedule
 import sys
 import time
 import tweettoot
+import traceback
 
 # Initialize common logging options
 logger = logging.getLogger(__name__)
@@ -62,6 +63,7 @@ def runJob():
             job.relay()
         except Exception as e:
             logger.critical(e)
+            traceback.print_exc()
 
     return True
 
