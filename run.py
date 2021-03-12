@@ -69,7 +69,7 @@ def runJob():
 
 if __name__ == "__main__":
     runJob()
-    schedule.every(every_x_minutes).minutes.do(lambda: runJob())
+    schedule.every(every_x_minutes).minutes.do(runJob)
     
     while 1:
         schedule.run_pending()
