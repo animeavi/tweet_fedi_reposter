@@ -256,7 +256,7 @@ class TweetToot:
         return post["id"]
 
     def remove_urls(self, text):
-        text = re.sub(remove_url_re, '', text, flags=re.MULTILINE)
+        text = re.sub(self.remove_url_re, '', text, flags=re.MULTILINE)
         return text
 
     def read_posted_ids(self):
