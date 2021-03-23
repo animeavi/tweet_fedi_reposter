@@ -32,6 +32,7 @@ class TweetToot:
     posted_ids = []
     remove_url_re = r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b'
     twitter_username_re = re.compile(r'(?<=^|(?<=[^a-zA-Z0-9-\.]))@([A-Za-z0-9_]+)')
+    logger_prefix = ""
 
     def __init__(self, app_name: str, twitter_url: str, mastodon_url: str, mastodon_token: str,
                 mastodon_client_id: str, mastodon_client_token: str, twitter_user_id: str,
@@ -52,26 +53,27 @@ class TweetToot:
         self.include_rts = include_rts
         self.posted_ids = self.read_posted_ids()
         self.tweet_amount = tweet_amount
+        self.logger_prefix = self.app_name + " - "
 
     def relay(self):
         if not self.app_name:
-            logger.error(f"relay() => Application name in config is incorrect/empty.")
+            logger.error(self.logger_prefix + "Application name in config is incorrect/empty.")
             return False
 
         if not self.twitter_url:
-            logger.error(f"relay() => Twitter URL in config is incorrect/empty.")
+            logger.error(self.logger_prefix + "Twitter URL in config is incorrect/empty.")
             return False
 
         if not self.mastodon_url:
-            logger.error(f"relay() => Mastodon URL in config is incorrect/empty.")
+            logger.error(self.logger_prefix + "Mastodon URL in config is incorrect/empty.")
             return False
 
         if not self.mastodon_token:
-            logger.error(f"relay() => Mastodon token in config is incorrect/empty.")
+            logger.error(self.logger_prefix + "Mastodon token in config is incorrect/empty.")
             return False
         # TODO: add more checks
 
-        logger.info("Init relay from " + self.twitter_url + " to " + self.mastodon_url + ".")
+        logger.info(self.logger_prefix + "Init relay from " + self.twitter_url + " to " + self.mastodon_url + ".")
 
         auth = OAuthHandler(self.twitter_api_key, self.twitter_api_secret)
         auth.set_access_token(self.twitter_user_key, self.twitter_user_secret)
@@ -82,12 +84,12 @@ class TweetToot:
             is_rt = hasattr(tweet, 'retweeted_status')
 
             if not self.include_rts and is_rt:
-                logger.info("RT detected, skipping")
+                logger.info(self.logger_prefix + "RT detected, skipping")
                 continue
 
             tweet_id = tweet.id
             if str(tweet_id) in self.posted_ids:
-                logger.info("Already posted, skipping")
+                logger.info(self.logger_prefix + "Already posted, skipping (" + str(tweet_id) + ")")
                 continue
 
             tweet_text = self.get_tweet_text(tweet, twitter_api, is_rt)
@@ -116,10 +118,10 @@ class TweetToot:
             post_id = -1
             post_id = self.post_tweet(media_ids, tweet_text, tweet_id, mastodon_api)
             if (post_id != -1):
-                logger.info("Tweet posted to Mastodon successfully!")
+                logger.info(self.logger_prefix + "Tweet posted to Mastodon successfully (" + str(tweet_id) + ")!")
                 self.update_posted_ids(str(tweet_id))
             else:
-                logger.error("Failed to post Tweet to Mastodon!")
+                logger.error(self.logger_prefix + "Failed to post Tweet to Mastodon (" + str(tweet_id) + ")!")
 
     def get_latest_tweets(self, twitter_api, amount):
         # count: maximum allowed tweets count
@@ -223,7 +225,7 @@ class TweetToot:
     def transfer_media(self, media_url, mastodon_api):
         media_id = -1
 
-        logger.info("Downloading " + media_url)
+        logger.info(self.logger_prefix + "Downloading " + media_url)
 
         media_file = requests.get(media_url, stream=True)
         media_file.raw.decode_content = True
@@ -236,7 +238,7 @@ class TweetToot:
         os.rename(temp_file.name, upload_file_name)
         temp_file_read = open(upload_file_name, 'rb')
 
-        logger.info("Uploading " + media_url + " to Mastodon")
+        logger.info(self.logger_prefix + "Uploading " + media_url + " to Mastodon")
 
         media_id = mastodon_api.media_post(upload_file_name)["id"]
 
