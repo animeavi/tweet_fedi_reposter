@@ -26,6 +26,7 @@ class TweetToot:
     twitter_api_secret = ""
     twitter_user_key = ""
     twitter_user_secret = ""
+    tweet_amount = 1
     strip_urls = False
     include_rts = False
     posted_ids = []
@@ -35,7 +36,7 @@ class TweetToot:
     def __init__(self, app_name: str, twitter_url: str, mastodon_url: str, mastodon_token: str,
                 mastodon_client_id: str, mastodon_client_token: str, twitter_user_id: str,
                 twitter_api_key: str, twitter_api_secret: str, twitter_user_key: str,
-                twitter_user_secret: str, strip_urls: bool, include_rts: bool):
+                twitter_user_secret: str, strip_urls: bool, include_rts: bool, tweet_amount: int):
         self.app_name = app_name
         self.twitter_url = twitter_url
         self.mastodon_url = mastodon_url
@@ -50,6 +51,7 @@ class TweetToot:
         self.strip_urls = strip_urls
         self.include_rts = include_rts
         self.posted_ids = self.read_posted_ids()
+        self.tweet_amount = tweet_amount
 
     def relay(self):
         if not self.app_name:
@@ -75,56 +77,56 @@ class TweetToot:
         auth.set_access_token(self.twitter_user_key, self.twitter_user_secret)
         twitter_api = API(auth)
 
-        tweet = self.get_latest_tweet(twitter_api)
-        is_rt = hasattr(tweet, 'retweeted_status')
+        timeline = self.get_latest_tweets(twitter_api, self.tweet_amount)
+        for tweet in timeline:
+            is_rt = hasattr(tweet, 'retweeted_status')
 
-        if not self.include_rts and is_rt:
-            logger.info("RT detected, skipping")
-            return True
+            if not self.include_rts and is_rt:
+                logger.info("RT detected, skipping")
+                return True
 
-        tweet_id = tweet.id
-        if str(tweet_id) in self.posted_ids:
-            logger.info("Already posted, skipping")
-            return True;
+            tweet_id = tweet.id
+            if str(tweet_id) in self.posted_ids:
+                logger.info("Already posted, skipping")
+                return True;
 
-        tweet_text = self.get_tweet_text(tweet, twitter_api, is_rt)
-        tweet_text = html.unescape(tweet_text)
-        tweet_text = self.escape_usernames(tweet_text)
-        tweet_text = self.expand_urls(tweet, tweet_text, twitter_api, is_rt)
+            tweet_text = self.get_tweet_text(tweet, twitter_api, is_rt)
+            tweet_text = html.unescape(tweet_text)
+            tweet_text = self.escape_usernames(tweet_text)
+            tweet_text = self.expand_urls(tweet, tweet_text, twitter_api, is_rt)
 
-        if self.strip_urls:
-            tweet_text = self.remove_urls(tweet_text)
+            if self.strip_urls:
+                tweet_text = self.remove_urls(tweet_text)
 
-        tweet_media = self.get_tweet_media(tweet, twitter_api, is_rt)
+            tweet_media = self.get_tweet_media(tweet, twitter_api, is_rt)
 
-        # Only initialize the Mastodon API if we find something
-        mastodon_api = Mastodon(
-            client_id=self.mastodon_client_id,
-            client_secret=self.mastodon_client_token,
-            access_token=self.mastodon_token,
-            api_base_url=self.mastodon_url
-        )
+            # Only initialize the Mastodon API if we find something
+            mastodon_api = Mastodon(
+                client_id=self.mastodon_client_id,
+                client_secret=self.mastodon_client_token,
+                access_token=self.mastodon_token,
+                api_base_url=self.mastodon_url
+            )
 
-        media_ids = []
-        for media in tweet_media:
-            media_id = self.transfer_media(media, mastodon_api)
-            if (media_id != -1):
-                media_ids.append(media_id);
-        post_id = -1
-        post_id = self.post_tweet(media_ids, tweet_text, tweet_id, mastodon_api)
-        if (post_id != -1):
-            logger.info("Tweet posted to Mastodon successfully!")
-            self.update_posted_ids(str(tweet_id))
-        else:
-            logger.error("Failed to post Tweet to Mastodon!")
+            media_ids = []
+            for media in tweet_media:
+                media_id = self.transfer_media(media, mastodon_api)
+                if (media_id != -1):
+                    media_ids.append(media_id);
+            post_id = -1
+            post_id = self.post_tweet(media_ids, tweet_text, tweet_id, mastodon_api)
+            if (post_id != -1):
+                logger.info("Tweet posted to Mastodon successfully!")
+                self.update_posted_ids(str(tweet_id))
+            else:
+                logger.error("Failed to post Tweet to Mastodon!")
 
-    def get_latest_tweet(self, twitter_api):
+    def get_latest_tweets(self, twitter_api, amount):
         # count: maximum allowed tweets count
         # tweet_mode: extended to get the full text,it prevents a primary tweet longer than 140 characters from being truncated.
-        timeline = twitter_api.user_timeline(user_id=self.twitter_user_id, count=1, tweet_mode="extended")
-        tweet = timeline[0]
+        timeline = twitter_api.user_timeline(user_id=self.twitter_user_id, count=amount, tweet_mode="extended")
 
-        return tweet
+        return timeline
 
     def get_tweet_entities(self, tweet, twitter_api, is_rt, get_ext=True):
         entities = None
