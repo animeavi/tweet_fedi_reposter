@@ -83,12 +83,12 @@ class TweetToot:
 
             if not self.include_rts and is_rt:
                 logger.info("RT detected, skipping")
-                return True
+                continue
 
             tweet_id = tweet.id
             if str(tweet_id) in self.posted_ids:
                 logger.info("Already posted, skipping")
-                return True;
+                continue
 
             tweet_text = self.get_tweet_text(tweet, twitter_api, is_rt)
             tweet_text = html.unescape(tweet_text)
