@@ -19,149 +19,84 @@ class TweetToot:
     twitter_url = ""
     mastodon_url = ""
     mastodon_token = ""
-    mastodon_client_id = ""
-    mastodon_client_token = ""
-    twitter_user_id = 0
     twitter_api_key = ""
     twitter_api_secret = ""
     twitter_user_key = ""
     twitter_user_secret = ""
-    tweet_amount = 1
     strip_urls = False
-    include_rts = False
-    posted_ids = []
     remove_url_re = r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b'
     twitter_username_re = re.compile(r'(?<=^|(?<=[^a-zA-Z0-9-\.]))@([A-Za-z0-9_]+)')
     logger_prefix = ""
 
     def __init__(self, app_name: str, twitter_url: str, mastodon_url: str, mastodon_token: str,
-                mastodon_client_id: str, mastodon_client_token: str, twitter_user_id: str,
                 twitter_api_key: str, twitter_api_secret: str, twitter_user_key: str,
-                twitter_user_secret: str, strip_urls: bool, include_rts: bool, tweet_amount: int):
+                twitter_user_secret: str, strip_urls: bool):
         self.app_name = app_name
         self.twitter_url = twitter_url
         self.mastodon_url = mastodon_url
         self.mastodon_token = mastodon_token
-        self.mastodon_client_id = mastodon_client_id
-        self.mastodon_client_token = mastodon_client_token
-        self.twitter_user_id = twitter_user_id
         self.twitter_api_key = twitter_api_key
         self.twitter_api_secret = twitter_api_secret
         self.twitter_user_key = twitter_user_key
         self.twitter_user_secret = twitter_user_secret
         self.strip_urls = strip_urls
-        self.include_rts = include_rts
-        self.posted_ids = self.read_posted_ids()
-        self.tweet_amount = tweet_amount
         self.logger_prefix = self.app_name + " - "
 
     def relay(self):
-        if not self.app_name:
-            logger.error(self.logger_prefix + "Application name in config is incorrect/empty.")
-            return False
-
-        if not self.twitter_url:
-            logger.error(self.logger_prefix + "Twitter URL in config is incorrect/empty.")
-            return False
-
-        if not self.mastodon_url:
-            logger.error(self.logger_prefix + "Mastodon URL in config is incorrect/empty.")
-            return False
-
-        if not self.mastodon_token:
-            logger.error(self.logger_prefix + "Mastodon token in config is incorrect/empty.")
-            return False
-        # TODO: add more checks
-
-        logger.info(self.logger_prefix + "Init relay from " + self.twitter_url + " to " + self.mastodon_url + ".")
+        logger.info(self.logger_prefix + "Reposting " + self.twitter_url + " to " + self.mastodon_url + ".")
 
         auth = OAuthHandler(self.twitter_api_key, self.twitter_api_secret)
         auth.set_access_token(self.twitter_user_key, self.twitter_user_secret)
         twitter_api = API(auth)
 
-        timeline = self.get_latest_tweets(twitter_api, self.tweet_amount)
-        for tweet in timeline:
-            is_rt = hasattr(tweet, 'retweeted_status')
+        tweet = twitter_api.get_status(int(self.twitter_url.split("/")[-1]))
 
-            if not self.include_rts and is_rt:
-                logger.info(self.logger_prefix + "RT detected, skipping")
-                continue
+        tweet_text = self.get_tweet_text(tweet, twitter_api)
+        tweet_text = html.unescape(tweet_text)
+        tweet_text = self.escape_usernames(tweet_text)
+        tweet_text = self.expand_urls(tweet, tweet_text, twitter_api)
 
-            tweet_id = tweet.id
-            if str(tweet_id) in self.posted_ids:
-                logger.info(self.logger_prefix + "Already posted, skipping (" + str(tweet_id) + ")")
-                continue
+        if self.strip_urls:
+            tweet_text = self.remove_urls(tweet_text)
 
-            tweet_text = self.get_tweet_text(tweet, twitter_api, is_rt)
-            tweet_text = html.unescape(tweet_text)
-            tweet_text = self.escape_usernames(tweet_text)
-            tweet_text = self.expand_urls(tweet, tweet_text, twitter_api, is_rt)
+        tweet_media = self.get_tweet_media(tweet, twitter_api)
 
-            if self.strip_urls:
-                tweet_text = self.remove_urls(tweet_text)
+        # Only initialize the Mastodon API if we find something
+        mastodon_api = Mastodon(
+            access_token=self.mastodon_token,
+            api_base_url=self.mastodon_url
+        )
 
-            tweet_media = self.get_tweet_media(tweet, twitter_api, is_rt)
+        media_ids = []
+        for media in tweet_media:
+            media_id = self.transfer_media(media, mastodon_api)
+            if (media_id != -1):
+                media_ids.append(media_id);
+        post_id = -1
+        post_id = self.post_tweet(media_ids, tweet_text, mastodon_api)
+        if (post_id != -1):
+            logger.info(self.logger_prefix + "Tweet posted to Mastodon successfully!")
+        else:
+            logger.error(self.logger_prefix + "Failed to post Tweet to Mastodon!")
 
-            # Only initialize the Mastodon API if we find something
-            mastodon_api = Mastodon(
-                client_id=self.mastodon_client_id,
-                client_secret=self.mastodon_client_token,
-                access_token=self.mastodon_token,
-                api_base_url=self.mastodon_url
-            )
-
-            media_ids = []
-            for media in tweet_media:
-                media_id = self.transfer_media(media, mastodon_api)
-                if (media_id != -1):
-                    media_ids.append(media_id);
-            post_id = -1
-            post_id = self.post_tweet(media_ids, tweet_text, tweet_id, mastodon_api)
-            if (post_id != -1):
-                logger.info(self.logger_prefix + "Tweet posted to Mastodon successfully (" + str(tweet_id) + ")!")
-                self.update_posted_ids(str(tweet_id))
-            else:
-                logger.error(self.logger_prefix + "Failed to post Tweet to Mastodon (" + str(tweet_id) + ")!")
-
-    def get_latest_tweets(self, twitter_api, amount):
-        # count: maximum allowed tweets count
-        # tweet_mode: extended to get the full text,it prevents a primary tweet longer than 140 characters from being truncated.
-        timeline = twitter_api.user_timeline(user_id=self.twitter_user_id, count=amount, tweet_mode="extended")
-
-        return timeline
-
-    def get_tweet_entities(self, tweet, twitter_api, is_rt, get_ext=True):
+    def get_tweet_entities(self, tweet, twitter_api, get_ext=True):
         entities = None
 
-        if is_rt:
-            t = tweet._json['retweeted_status']
-            if get_ext and 'extended_entities' in t:
-                entities = t['extended_entities']
-            elif 'entities' in t:
-                entities = t['entities']
-        elif get_ext and 'extended_entities' in tweet._json:
+        if get_ext and 'extended_entities' in tweet._json:
             entities = tweet.extended_entities
         elif 'entities' in tweet._json:
             entities = tweet.entities
 
         return entities
 
-    def get_tweet_media(self, tweet, twitter_api, is_rt):
+    def get_tweet_media(self, tweet, twitter_api):
         media_list = []
-        entities = self.get_tweet_entities(tweet, twitter_api, is_rt)
+        entities = self.get_tweet_entities(tweet, twitter_api)
 
         if entities is None:
             return media_list
 
-        if is_rt :
-            if 'media' in entities:
-                for media in entities['media']:
-                    if media['type'] == 'video' or media['type'] == 'animated_gif':
-                        media_list.append(self.get_best_media(media['video_info']['variants']))
-                        break
-                    else:
-                        media_list.append(media['media_url'])
-        elif 'media' in entities:
+        if 'media' in entities:
             for media in entities['media']:
                 if media['type'] == 'video' or media['type'] == 'animated_gif':
                     media_list.append(self.get_best_media(media['video_info']['variants']))
@@ -185,33 +120,26 @@ class TweetToot:
 
         return media_url
 
-    def get_tweet_text(self, tweet, twitter_api, is_rt):
+    def get_tweet_text(self, tweet, twitter_api):
         text = ""
         remove_media_url = ""
-        entities = self.get_tweet_entities(tweet, twitter_api, is_rt)
+        entities = self.get_tweet_entities(tweet, twitter_api)
 
-        if is_rt:
-            t = tweet._json['retweeted_status']
-            if 'full_text' in t:
-                text = t['full_text']
-            elif 'text' in t:
-                text = t['text']
+        if hasattr(tweet, 'full_text'):
+            text = tweet.full_text
+        elif hasattr(tweet, 'text'):
+            text = tweet.text
 
-            text = "RT @" + t['user']['screen_name'] + ": " + text
-        else:
-            if hasattr(tweet, 'full_text'):
-                text = tweet.full_text
-            elif hasattr(tweet, 'text'):
-                text = tweet.text
+        text = "RT @" + tweet.user.screen_name + ": " + text
 
         if 'media' in entities:
             remove_media_url = entities['media'][0]['url']
 
         return text.replace(remove_media_url, "")
 
-    def expand_urls(self, tweet, tweet_text, twitter_api, is_rt):
+    def expand_urls(self, tweet, tweet_text, twitter_api):
         text = tweet_text
-        entities = self.get_tweet_entities(tweet, twitter_api, is_rt, False)
+        entities = self.get_tweet_entities(tweet, twitter_api, False)
 
         if entities is None:
             return text
@@ -247,7 +175,7 @@ class TweetToot:
 
         return media_id
 
-    def post_tweet(self, media_ids, tweet_text, tweet_id, mastodon_api):
+    def post_tweet(self, media_ids, tweet_text, mastodon_api):
         post = mastodon_api.status_post(
             status = tweet_text,
             media_ids = media_ids,
@@ -262,20 +190,6 @@ class TweetToot:
     def remove_urls(self, text):
         text = re.sub(self.remove_url_re, '', text, flags=re.MULTILINE)
         return text
-
-    def read_posted_ids(self):
-        lines = []
-        with open("posted.ids") as file:
-            for line in file:
-                line = line.strip()
-                lines.append(line)
-
-        return lines
-
-    def update_posted_ids(self, id):
-        self.posted_ids.append(id)
-        with open("posted.ids", "a") as file_object:
-            file_object.write("\n" + id)
 
     def escape_usernames(self, text):
         ats = re.findall(self.twitter_username_re, text)
