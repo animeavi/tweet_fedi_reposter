@@ -1,9 +1,19 @@
-I basically changed the whole thing, some of it for worse (less features).
+Reposts a tweet to the fediverse
 
-## Changes made
-- Grabbing Tweet data using the API instead of HTML scraping (wasn't working anyway)
-- Can now grab images and videos to repost
+This is for a single tweet only, if you want to repost automatically from a bot use [this](https://github.com/animeavi/tweet-toot).
 
-## TODO
-- ~~Find a way to still grab URLs but remove only the URL that self-references the media in the tweet~~
-- ~~Add support multiple configs/accounts back once I have a good way to do it~~
+## How to use
+
+First, edit **config.json** with your Twitter and fediverse API keys, then install the required python libs (only the first time you run it) and run it.
+
+```
+pip install -r requirements.txt
+python run.py https://twitter.com/status/...
+```
+
+## If you wanna run it more easily just create a symlink (or alias)
+
+```
+chmod +x /path/to_tweet_fedi_reposter/run.py
+sudo ln -s /path/to_tweet_fedi_reposter/run.py /usr/bin/tweetoot
+````
