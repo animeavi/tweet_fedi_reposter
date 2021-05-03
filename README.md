@@ -1,10 +1,10 @@
-Reposts a tweet to the fediverse
+Reposts a tweet to the fediverse.
 
 This is for a single tweet only, if you want to repost automatically from a bot use [this](https://github.com/animeavi/tweet-toot).
 
 ## How to use
 
-First, edit **config.json** with your Twitter and fediverse API keys, then install the required python libs (only the first time you run it) and run it.
+First, edit **config.json** with your Twitter and fediverse API keys (to get your bearer token follow [this](https://mastodonpy.readthedocs.io/en/stable/)), then install the required python libs (only the first time you run it) and run it. 
 
 ```
 pip install -r requirements.txt
