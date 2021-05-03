@@ -8,7 +8,7 @@ First, edit **config.json** with your Twitter and fediverse API keys (to get you
 
 ```
 pip install -r requirements.txt
-python run.py https://twitter.com/status/...
+python run.py https://twitter.com/user/status/1234
 ```
 
 ## If you wanna run it more easily just create a symlink (or alias)
