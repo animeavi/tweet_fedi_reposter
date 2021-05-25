@@ -49,7 +49,7 @@ class TweetToot:
         auth.set_access_token(self.twitter_user_key, self.twitter_user_secret)
         twitter_api = API(auth)
 
-        tweet = twitter_api.get_status(int(self.twitter_url.split("/")[-1].split("?")[0]))
+        tweet = twitter_api.get_status(int(self.twitter_url.split("/")[-1].split("?")[0]), tweet_mode="extended")
 
         tweet_text = self.get_tweet_text(tweet, twitter_api)
         tweet_text = html.unescape(tweet_text)
