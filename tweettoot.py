@@ -75,9 +75,9 @@ class TweetToot:
         post_id = -1
         post_id = self.post_tweet(media_ids, tweet_text, mastodon_api)
         if (post_id != -1):
-            logger.info(self.logger_prefix + "Tweet posted to Mastodon successfully!")
+            logger.info(self.logger_prefix + "Tweet posted to " + self.mastodon_url + "successfully!")
         else:
-            logger.error(self.logger_prefix + "Failed to post Tweet to Mastodon!")
+            logger.error(self.logger_prefix + "Failed to post Tweet to " + self.mastodon_url + "!")
 
     def get_tweet_entities(self, tweet, twitter_api, get_ext=True):
         entities = None
@@ -166,7 +166,7 @@ class TweetToot:
         os.rename(temp_file.name, upload_file_name)
         temp_file_read = open(upload_file_name, 'rb')
 
-        logger.info(self.logger_prefix + "Uploading " + media_url + " to Mastodon")
+        logger.info(self.logger_prefix + "Uploading " + media_url + " to " + self.mastodon_url)
 
         media_id = mastodon_api.media_post(upload_file_name)["id"]
 
