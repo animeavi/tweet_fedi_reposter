@@ -75,7 +75,7 @@ class TweetToot:
         post_id = -1
         post_id = self.post_tweet(media_ids, tweet_text, mastodon_api)
         if (post_id != -1):
-            logger.info(self.logger_prefix + "Tweet posted to " + self.mastodon_url + "successfully!")
+            logger.info(self.logger_prefix + "Tweet posted to " + self.mastodon_url + " successfully!")
         else:
             logger.error(self.logger_prefix + "Failed to post Tweet to " + self.mastodon_url + "!")
 
