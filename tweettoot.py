@@ -210,10 +210,10 @@ class TweetToot:
         remove_media_url = ""
         entities = self.get_tweet_entities(tweet)
 
-        if hasattr(tweet, 'full_text'):
-            text = tweet.full_text
-        elif hasattr(tweet, 'text'):
-            text = tweet.text
+        if 'full_text' in tweet:
+            text = tweet['full_text']
+        elif 'text' in tweet:
+            text = tweet['text']
 
         text = "RT @" + self.tweet_user_name + ": " + text
 
