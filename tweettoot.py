@@ -124,7 +124,14 @@ class TweetToot:
         resp = json.loads(resp.text)
 
         tweet = resp['data']['threaded_conversation_with_injections']['instructions'][
-            0]['entries'][0]['content']['itemContent']['tweet_results']['result']['legacy']
+            0]['entries'][0]['content']['itemContent']
+
+        if tweet['itemType'] == "TimelineTombstone":
+            # TODO: use Nitter or something to try to grab those
+            logger.error("Tweet deleted, not accessible or 18+!")
+            exit(1)
+
+        tweet = tweet['tweet_results']['result']['legacy']
 
         tweet_text = self.get_tweet_text(tweet)
         tweet_text = html.unescape(tweet_text)
