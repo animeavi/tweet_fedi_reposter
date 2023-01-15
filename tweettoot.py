@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 
 from mastodon import Mastodon
-from tweepy import API
-from tweepy import OAuthHandler
+import codecs
 import helpers
 import html
+import json
 import logging
 import mimetypes
 import os
+import random
 import re
 import requests
+import string
 import tempfile
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -20,15 +23,34 @@ class TweetToot:
     twitter_url = ""
     mastodon_url = ""
     mastodon_token = ""
-    twitter_api_key = ""
-    twitter_api_secret = ""
-    twitter_user_key = ""
-    twitter_user_secret = ""
+    twitter_guest_token = ""
+    twitter_user_agent = ""
     strip_urls = False
     remove_url_re = r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b'
     twitter_username_re = re.compile(
         r'(?<=^|(?<=[^a-zA-Z0-9-\.]))@([A-Za-z0-9_]+)')
     logger_prefix = ""
+    tweet_user_name = ""
+    twitter_session_headers = {}
+    graphql_params = {
+        "referrer": "tweet",
+        "with_rux_injections": False,
+        "includePromotedContent": False,
+        "withCommunity": False,
+        "withQuickPromoteEligibilityTweetFields": False,
+        "withTweetQuoteCount": False,
+        "withBirdwatchNotes": False,
+        "withSuperFollowsUserFields": False,
+        "withBirdwatchPivots": False,
+        "withDownvotePerspective": False,
+        "withReactionsMetadata": False,
+        "withReactionsPerspective": False,
+        "withSuperFollowsTweetFields": False,
+        "withVoice": False,
+        "withV2Timeline": False,
+        "__fs_interactive_text": False,
+        "__fs_dont_mention_me_view_api_enabled": False
+    }
 
     def __init__(
             self,
@@ -36,23 +58,29 @@ class TweetToot:
             twitter_url: str,
             mastodon_url: str,
             mastodon_token: str,
-            twitter_api_key: str,
-            twitter_api_secret: str,
-            twitter_user_key: str,
-            twitter_user_secret: str,
+            twitter_guest_token: str,
+            twitter_user_agent: str,
             strip_urls: bool):
         self.app_name = app_name
         self.twitter_url = twitter_url
         self.mastodon_url = mastodon_url
         self.mastodon_token = mastodon_token
-        self.twitter_api_key = twitter_api_key
-        self.twitter_api_secret = twitter_api_secret
-        self.twitter_user_key = twitter_user_key
-        self.twitter_user_secret = twitter_user_secret
+        self.twitter_guest_token = twitter_guest_token
+        self.twitter_user_agent = twitter_user_agent
         self.strip_urls = strip_urls
         self.logger_prefix = self.app_name + " - "
+        self.twitter_session_headers = {
+            'Connection': 'keep-alive',
+            'User-Agent': twitter_user_agent,
+            'Accept': '*/*',
+            'Referer': 'https://twitter.com',
+            'Accept-Language': 'en-US,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br'}
 
     def relay(self):
+        self.tweet_user_name = self.twitter_url.split(
+            "twitter.com/")[-1].split("/")[0]
+
         logger.info(
             self.logger_prefix +
             "Reposting " +
@@ -61,22 +89,52 @@ class TweetToot:
             self.mastodon_url +
             ".")
 
-        auth = OAuthHandler(self.twitter_api_key, self.twitter_api_secret)
-        auth.set_access_token(self.twitter_user_key, self.twitter_user_secret)
-        twitter_api = API(auth)
+        session = requests.Session()
+        response = session.get(
+            'https://twitter.com/',
+            headers=self.twitter_session_headers)
 
-        tweet = twitter_api.get_status(
-            int(self.twitter_url.split("/")[-1].split("?")[0]), tweet_mode="extended")
+        self.twitter_session_headers['authorization'] = 'Bearer ' + \
+            self.twitter_guest_token
+        self.twitter_session_headers['content-type'] = 'application/x-www-form-urlencoded'
 
-        tweet_text = self.get_tweet_text(tweet, twitter_api)
+        response = session.post(
+            'https://api.twitter.com/1.1/guest/activate.json',
+            headers=self.twitter_session_headers)
+
+        gt = json.loads(response.text)['guest_token']
+        self.twitter_session_headers['x-guest-token'] = gt
+
+        session.cookies['gt'] = gt
+        session.cookies['ct0'] = ''.join(
+            random.choice(
+                string.ascii_lowercase +
+                string.digits) for _ in range(32))
+
+        self.twitter_session_headers['content-type'] = 'application/json'
+        self.twitter_session_headers['Referer'] = 'https://twitter.com/'
+
+        self.graphql_params['focalTweetId'] = self.twitter_url.split(
+            "/")[-1].split("?")[0]
+        params_json = json.dumps(self.graphql_params)
+
+        resp = session.get(
+            f'https://twitter.com/i/api/graphql/s2RO46g9Rhw53GX2BEMfiA/TweetDetail?variables={params_json}',
+            headers=self.twitter_session_headers)
+        resp = json.loads(resp.text)
+
+        tweet = resp['data']['threaded_conversation_with_injections']['instructions'][
+            0]['entries'][0]['content']['itemContent']['tweet_results']['result']['legacy']
+
+        tweet_text = self.get_tweet_text(tweet)
         tweet_text = html.unescape(tweet_text)
         tweet_text = self.escape_usernames(tweet_text)
-        tweet_text = self.expand_urls(tweet, tweet_text, twitter_api)
+        tweet_text = self.expand_urls(tweet, tweet_text)
 
         if self.strip_urls:
             tweet_text = self.remove_urls(tweet_text)
 
-        tweet_media = self.get_tweet_media(tweet, twitter_api)
+        tweet_media = self.get_tweet_media(tweet)
 
         # Only initialize the Mastodon API if we find something
         mastodon_api = Mastodon(
@@ -104,19 +162,19 @@ class TweetToot:
                 self.mastodon_url +
                 "!")
 
-    def get_tweet_entities(self, tweet, twitter_api, get_ext=True):
+    def get_tweet_entities(self, tweet, get_ext=True):
         entities = None
 
-        if get_ext and 'extended_entities' in tweet._json:
-            entities = tweet.extended_entities
-        elif 'entities' in tweet._json:
-            entities = tweet.entities
+        if get_ext and 'extended_entities' in tweet:
+            entities = tweet['extended_entities']
+        elif 'entities' in tweet:
+            entities = tweet['entities']
 
         return entities
 
-    def get_tweet_media(self, tweet, twitter_api):
+    def get_tweet_media(self, tweet):
         media_list = []
-        entities = self.get_tweet_entities(tweet, twitter_api)
+        entities = self.get_tweet_entities(tweet)
 
         if entities is None:
             return media_list
@@ -129,7 +187,7 @@ class TweetToot:
                             media['video_info']['variants']))
                     break
                 else:
-                    media_list.append(media['media_url'])
+                    media_list.append(media['media_url_https'])
 
         return media_list
 
@@ -147,26 +205,26 @@ class TweetToot:
 
         return media_url
 
-    def get_tweet_text(self, tweet, twitter_api):
+    def get_tweet_text(self, tweet):
         text = ""
         remove_media_url = ""
-        entities = self.get_tweet_entities(tweet, twitter_api)
+        entities = self.get_tweet_entities(tweet)
 
         if hasattr(tweet, 'full_text'):
             text = tweet.full_text
         elif hasattr(tweet, 'text'):
             text = tweet.text
 
-        text = "RT @" + tweet.user.screen_name + ": " + text
+        text = "RT @" + self.tweet_user_name + ": " + text
 
         if 'media' in entities:
             remove_media_url = entities['media'][0]['url']
 
         return text.replace(remove_media_url, "")
 
-    def expand_urls(self, tweet, tweet_text, twitter_api):
+    def expand_urls(self, tweet, tweet_text):
         text = tweet_text
-        entities = self.get_tweet_entities(tweet, twitter_api, False)
+        entities = self.get_tweet_entities(tweet, False)
 
         if entities is None:
             return text

@@ -22,10 +22,8 @@ def runJob(tweet_url):
     twitter_url = tweet_url
     mastodon_url = helpers._config("TT_HOST_INSTANCE", config)
     mastodon_token = helpers._config("TT_APP_SECURE_TOKEN", config)
-    twitter_api_key = helpers._config("TT_TWITTER_CONSUMER_KEY", config)
-    twitter_api_secret = helpers._config("TT_TWITTER_CONSUMER_SECRET", config)
-    twitter_user_key = helpers._config("TT_TWITTER_TOKEN", config)
-    twitter_user_secret = helpers._config("TT_TWITTER_TOKEN_SECRET", config)
+    twitter_guest_token = helpers._config("TT_TWITTER_GUEST_TOKEN", config)
+    twitter_user_agent = helpers._config("TT_TWITTER_USER_AGENT", config)
 
     strip_urls = False
     if (helpers._config("TT_STRIP_URLS", config).lower() == "yes"):
@@ -37,10 +35,8 @@ def runJob(tweet_url):
             twitter_url=twitter_url,
             mastodon_url=mastodon_url,
             mastodon_token=mastodon_token,
-            twitter_api_key=twitter_api_key,
-            twitter_api_secret=twitter_api_secret,
-            twitter_user_key=twitter_user_key,
-            twitter_user_secret=twitter_user_secret,
+            twitter_guest_token=twitter_guest_token,
+            twitter_user_agent=twitter_user_agent,
             strip_urls=strip_urls,
         )
         job.relay()
