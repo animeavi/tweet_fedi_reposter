@@ -10,6 +10,7 @@ import sys
 logger = logging.getLogger(__name__)
 base_path = os.path.dirname(__file__)
 
+
 def _config(key, config_file_name):
     if key in os.environ:
         return os.environ[key]
@@ -29,8 +30,12 @@ def _config(key, config_file_name):
     if config.get(key):
         return config.get(key)
     else:
-        logger.critical(f"{key} not found in " + config_file_name + " or in the environment. Exiting.")
+        logger.critical(
+            f"{key} not found in " +
+            config_file_name +
+            " or in the environment. Exiting.")
         sys.exit()
+
 
 def _read_file(path):
     file = Path(path)

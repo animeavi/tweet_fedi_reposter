@@ -13,6 +13,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
 
+
 def runJob(tweet_url):
     config = "config.json"
 
@@ -32,15 +33,15 @@ def runJob(tweet_url):
 
     try:
         job = tweettoot.TweetToot(
-            app_name = app_name,
-            twitter_url = twitter_url,
-            mastodon_url = mastodon_url,
-            mastodon_token = mastodon_token,
-            twitter_api_key = twitter_api_key,
-            twitter_api_secret = twitter_api_secret,
-            twitter_user_key = twitter_user_key,
-            twitter_user_secret = twitter_user_secret,
-            strip_urls = strip_urls,
+            app_name=app_name,
+            twitter_url=twitter_url,
+            mastodon_url=mastodon_url,
+            mastodon_token=mastodon_token,
+            twitter_api_key=twitter_api_key,
+            twitter_api_secret=twitter_api_secret,
+            twitter_user_key=twitter_user_key,
+            twitter_user_secret=twitter_user_secret,
+            strip_urls=strip_urls,
         )
         job.relay()
     except Exception as e:
@@ -48,6 +49,7 @@ def runJob(tweet_url):
         traceback.print_exc()
 
     return True
+
 
 if __name__ == "__main__":
     runJob(sys.argv[1])

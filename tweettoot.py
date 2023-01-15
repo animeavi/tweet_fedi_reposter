@@ -14,6 +14,7 @@ import tempfile
 
 logger = logging.getLogger(__name__)
 
+
 class TweetToot:
     app_name = ""
     twitter_url = ""
@@ -25,12 +26,21 @@ class TweetToot:
     twitter_user_secret = ""
     strip_urls = False
     remove_url_re = r'(https|http)?:\/\/(\w|\.|\/|\?|\=|\&|\%)*\b'
-    twitter_username_re = re.compile(r'(?<=^|(?<=[^a-zA-Z0-9-\.]))@([A-Za-z0-9_]+)')
+    twitter_username_re = re.compile(
+        r'(?<=^|(?<=[^a-zA-Z0-9-\.]))@([A-Za-z0-9_]+)')
     logger_prefix = ""
 
-    def __init__(self, app_name: str, twitter_url: str, mastodon_url: str, mastodon_token: str,
-                twitter_api_key: str, twitter_api_secret: str, twitter_user_key: str,
-                twitter_user_secret: str, strip_urls: bool):
+    def __init__(
+            self,
+            app_name: str,
+            twitter_url: str,
+            mastodon_url: str,
+            mastodon_token: str,
+            twitter_api_key: str,
+            twitter_api_secret: str,
+            twitter_user_key: str,
+            twitter_user_secret: str,
+            strip_urls: bool):
         self.app_name = app_name
         self.twitter_url = twitter_url
         self.mastodon_url = mastodon_url
@@ -43,13 +53,20 @@ class TweetToot:
         self.logger_prefix = self.app_name + " - "
 
     def relay(self):
-        logger.info(self.logger_prefix + "Reposting " + self.twitter_url + " to " + self.mastodon_url + ".")
+        logger.info(
+            self.logger_prefix +
+            "Reposting " +
+            self.twitter_url +
+            " to " +
+            self.mastodon_url +
+            ".")
 
         auth = OAuthHandler(self.twitter_api_key, self.twitter_api_secret)
         auth.set_access_token(self.twitter_user_key, self.twitter_user_secret)
         twitter_api = API(auth)
 
-        tweet = twitter_api.get_status(int(self.twitter_url.split("/")[-1].split("?")[0]), tweet_mode="extended")
+        tweet = twitter_api.get_status(
+            int(self.twitter_url.split("/")[-1].split("?")[0]), tweet_mode="extended")
 
         tweet_text = self.get_tweet_text(tweet, twitter_api)
         tweet_text = html.unescape(tweet_text)
@@ -71,13 +88,21 @@ class TweetToot:
         for media in tweet_media:
             media_id = self.transfer_media(media, mastodon_api)
             if (media_id != -1):
-                media_ids.append(media_id);
+                media_ids.append(media_id)
         post_id = -1
         post_id = self.post_tweet(media_ids, tweet_text, mastodon_api)
         if (post_id != -1):
-            logger.info(self.logger_prefix + "Tweet posted to " + self.mastodon_url + " successfully!")
+            logger.info(
+                self.logger_prefix +
+                "Tweet posted to " +
+                self.mastodon_url +
+                " successfully!")
         else:
-            logger.error(self.logger_prefix + "Failed to post Tweet to " + self.mastodon_url + "!")
+            logger.error(
+                self.logger_prefix +
+                "Failed to post Tweet to " +
+                self.mastodon_url +
+                "!")
 
     def get_tweet_entities(self, tweet, twitter_api, get_ext=True):
         entities = None
@@ -99,7 +124,9 @@ class TweetToot:
         if 'media' in entities:
             for media in entities['media']:
                 if media['type'] == 'video' or media['type'] == 'animated_gif':
-                    media_list.append(self.get_best_media(media['video_info']['variants']))
+                    media_list.append(
+                        self.get_best_media(
+                            media['video_info']['variants']))
                     break
                 else:
                     media_list.append(media['media_url'])
@@ -161,12 +188,18 @@ class TweetToot:
         temp_file = tempfile.NamedTemporaryFile(delete=False)
         temp_file.write(media_file.raw.read())
         temp_file.close()
-        file_extension = mimetypes.guess_extension(media_file.headers['Content-type'])
+        file_extension = mimetypes.guess_extension(
+            media_file.headers['Content-type'])
         upload_file_name = temp_file.name + file_extension
         os.rename(temp_file.name, upload_file_name)
         temp_file_read = open(upload_file_name, 'rb')
 
-        logger.info(self.logger_prefix + "Uploading " + media_url + " to " + self.mastodon_url)
+        logger.info(
+            self.logger_prefix +
+            "Uploading " +
+            media_url +
+            " to " +
+            self.mastodon_url)
 
         media_id = mastodon_api.media_post(upload_file_name)["id"]
 
@@ -177,12 +210,12 @@ class TweetToot:
 
     def post_tweet(self, media_ids, tweet_text, mastodon_api):
         post = mastodon_api.status_post(
-            status = tweet_text,
-            media_ids = media_ids,
-            visibility = "public",
-            sensitive = False,
-            spoiler_text = None,
-            in_reply_to_id = None
+            status=tweet_text,
+            media_ids=media_ids,
+            visibility="public",
+            sensitive=False,
+            spoiler_text=None,
+            in_reply_to_id=None
         )
 
         return post["id"]
@@ -194,6 +227,6 @@ class TweetToot:
     def escape_usernames(self, text):
         ats = re.findall(self.twitter_username_re, text)
         for at in ats:
-            text = text.replace("@"+at, "@*"+at)
+            text = text.replace("@" + at, "@*" + at)
 
         return text
