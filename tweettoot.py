@@ -14,6 +14,7 @@ import requests
 import string
 import tempfile
 import time
+import urllib.parse
 
 logger = logging.getLogger(__name__)
 
@@ -32,24 +33,47 @@ class TweetToot:
     logger_prefix = ""
     tweet_user_name = ""
     twitter_session_headers = {}
-    graphql_params = {
-        "referrer": "tweet",
-        "with_rux_injections": False,
-        "includePromotedContent": False,
-        "withCommunity": False,
-        "withQuickPromoteEligibilityTweetFields": False,
-        "withTweetQuoteCount": False,
-        "withBirdwatchNotes": False,
-        "withSuperFollowsUserFields": False,
-        "withBirdwatchPivots": False,
-        "withDownvotePerspective": False,
-        "withReactionsMetadata": False,
-        "withReactionsPerspective": False,
-        "withSuperFollowsTweetFields": False,
-        "withVoice": False,
-        "withV2Timeline": False,
-        "__fs_interactive_text": False,
-        "__fs_dont_mention_me_view_api_enabled": False
+    graphql_variables = {
+        'cursor': None,
+        'referrer': 'tweet',
+        'with_rux_injections': False,
+        'includePromotedContent': True,
+        'withCommunity': True,
+        'withQuickPromoteEligibilityTweetFields': True,
+        'withBirdwatchNotes': False,
+        'withSuperFollowsUserFields': True,
+        'withDownvotePerspective': False,
+        'withReactionsMetadata': False,
+        'withReactionsPerspective': False,
+        'withSuperFollowsTweetFields': True,
+        'withVoice': True,
+        'withV2Timeline': True
+    }
+
+    graphql_features = {
+        'responsive_web_twitter_blue_verified_badge_is_enabled': True,
+        'responsive_web_graphql_exclude_directive_enabled': False,
+        'verified_phone_label_enabled': False,
+        'responsive_web_graphql_timeline_navigation_enabled': True,
+        'responsive_web_graphql_skip_user_profile_image_extensions_enabled': False,
+        'tweetypie_unmention_optimization_enabled': True,
+        'vibe_api_enabled': True,
+        'responsive_web_edit_tweet_api_enabled': True,
+        'graphql_is_translatable_rweb_tweet_is_translatable_enabled': True,
+        'view_counts_everywhere_api_enabled': True,
+        'longform_notetweets_consumption_enabled': True,
+        'tweet_awards_web_tipping_enabled': False,
+        'freedom_of_speech_not_reach_fetch_enabled': False,
+        'standardized_nudges_misinfo': True,
+        'tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled': False,
+        'interactive_text_enabled': True,
+        'responsive_web_text_conversations_enabled': False,
+        'responsive_web_enhance_cards_enabled': False,
+        'longform_notetweets_inline_media_enabled': True,
+        'longform_notetweets_rich_text_read_enabled': False,
+        'creator_subscriptions_tweet_preview_api_enabled': False,
+        'rweb_lists_timeline_redesign_enabled': False,
+        'blue_business_profile_image_shape_enabled': False
     }
 
     def __init__(
@@ -74,7 +98,7 @@ class TweetToot:
             'User-Agent': twitter_user_agent,
             'Accept': '*/*',
             'Referer': 'https://twitter.com',
-            'Accept-Language': 'en-US,en;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
             'Accept-Encoding': 'gzip, deflate, br'}
 
     def relay(self):
@@ -114,16 +138,22 @@ class TweetToot:
         self.twitter_session_headers['content-type'] = 'application/json'
         self.twitter_session_headers['Referer'] = 'https://twitter.com/'
 
-        self.graphql_params['focalTweetId'] = self.twitter_url.split(
+        self.graphql_variables['focalTweetId'] = self.twitter_url.split(
             "/")[-1].split("?")[0]
-        params_json = json.dumps(self.graphql_params)
+
+        params = {'variables': self.graphql_variables,
+                  'features': self.graphql_features}
+        params = urllib.parse.urlencode({k: json.dumps(v, separators=(
+            ',', ':')) for k, v in params.items()}, quote_via=urllib.parse.quote)
+
+        endpoint = 'https://twitter.com/i/api/graphql/miKSMGb2R1SewIJv2-ablQ/TweetDetail'
 
         resp = session.get(
-            f'https://twitter.com/i/api/graphql/s2RO46g9Rhw53GX2BEMfiA/TweetDetail?variables={params_json}',
-            headers=self.twitter_session_headers)
+            endpoint, headers=self.twitter_session_headers, params=params)
+
         resp = json.loads(resp.text)
 
-        tweet = resp['data']['threaded_conversation_with_injections']['instructions'][
+        tweet = resp['data']['threaded_conversation_with_injections_v2']['instructions'][
             0]['entries'][0]['content']['itemContent']
 
         if tweet['itemType'] == "TimelineTombstone":
