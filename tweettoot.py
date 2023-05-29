@@ -156,7 +156,7 @@ class TweetToot:
         tweet = resp['data']['threaded_conversation_with_injections_v2']['instructions'][
             0]['entries'][0]['content']['itemContent']
 
-        if tweet['itemType'] == "TimelineTombstone":
+        if tweet['tweet_results']['result']['__typename'] == "TweetTombstone":
             # TODO: use Nitter or something to try to grab those
             logger.error("Tweet deleted, not accessible or 18+!")
             exit(1)
