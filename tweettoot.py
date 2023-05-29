@@ -4,10 +4,12 @@ from mastodon import Mastodon
 import codecs
 import helpers
 import html
+import io
 import json
 import logging
 import mimetypes
 import os
+import os.path
 import random
 import re
 import requests
@@ -102,6 +104,11 @@ class TweetToot:
             'Accept-Encoding': 'gzip, deflate, br'}
 
     def relay(self):
+        # cd to script directory
+        abspath = os.path.abspath(__file__)
+        dname = os.path.dirname(abspath)
+        os.chdir(dname)
+
         self.tweet_user_name = self.twitter_url.split(
             "twitter.com/")[-1].split("/")[0]
 
@@ -156,22 +163,34 @@ class TweetToot:
         tweet = resp['data']['threaded_conversation_with_injections_v2']['instructions'][
             0]['entries'][0]['content']['itemContent']
 
-        if tweet['tweet_results']['result']['__typename'] == "TweetTombstone":
-            # TODO: use Nitter or something to try to grab those
+        tweet_text = ""
+        tweet_media = []
+        not_found = False
+
+        if not tweet['tweet_results']['result']['__typename'] == "TweetTombstone":
+            tweet = tweet['tweet_results']['result']['legacy']
+
+            tweet_text = self.filter_text(tweet, self.get_tweet_text(tweet), self.strip_urls)
+            tweet_media = self.get_tweet_media(tweet)
+        else:
+            if os.path.isfile("twoot.py"):
+                os.system("python twoot.py -t " + self.twitter_url + " -j twoot.json")
+                f = io.open("twoot.json", mode="r", encoding="utf-8")
+                twoot_json = json.load(f)
+                f.close()
+
+                tweet_text = self.filter_text(None, self.get_twoot_text(twoot_json), self.strip_urls)
+                tweet_media = twoot_json["photos"]
+
+                # cleanup
+                os.remove("twoot.log")
+                os.remove("twoot.json")
+            else:
+                not_found = True
+
+        if not_found:
             logger.error("Tweet deleted, not accessible or 18+!")
             exit(1)
-
-        tweet = tweet['tweet_results']['result']['legacy']
-
-        tweet_text = self.get_tweet_text(tweet)
-        tweet_text = html.unescape(tweet_text)
-        tweet_text = self.escape_usernames(tweet_text)
-        tweet_text = self.expand_urls(tweet, tweet_text)
-
-        if self.strip_urls:
-            tweet_text = self.remove_urls(tweet_text)
-
-        tweet_media = self.get_tweet_media(tweet)
 
         # Only initialize the Mastodon API if we find something
         mastodon_api = Mastodon(
@@ -259,6 +278,13 @@ class TweetToot:
 
         return text.replace(remove_media_url, "")
 
+    def get_twoot_text(self, twoot_json):
+        text = twoot_json["tweet_text"]
+
+        text = "RT @" + self.tweet_user_name + ": " + text
+
+        return text
+
     def expand_urls(self, tweet, tweet_text):
         text = tweet_text
         entities = self.get_tweet_entities(tweet, False)
@@ -325,3 +351,15 @@ class TweetToot:
             text = text.replace("@" + at, "@*" + at)
 
         return text
+
+    def filter_text(self, tweet, tweet_text, strip_urls):
+        tweet_text = html.unescape(tweet_text)
+        tweet_text = self.escape_usernames(tweet_text)
+
+        if tweet is not None:
+            tweet_text = self.expand_urls(tweet, tweet_text)
+
+        if strip_urls:
+            tweet_text = self.remove_urls(tweet_text)
+
+        return tweet_text

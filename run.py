@@ -2,6 +2,8 @@
 
 import helpers
 import logging
+import os
+import os.path
 import sys
 import tweettoot
 import traceback
@@ -15,6 +17,11 @@ logging.basicConfig(
 
 
 def runJob(tweet_url):
+    # cd to script directory
+    abspath = os.path.abspath(__file__)
+    dname = os.path.dirname(abspath)
+    os.chdir(dname)
+
     config = "config.json"
 
     # Initialize variables
