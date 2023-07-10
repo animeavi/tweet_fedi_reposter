@@ -1,8 +1,8 @@
 {
     "TT_APP_NAME": "Yuffie",
-    "TT_TWITTER_GUEST_TOKEN": "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs=1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
-    "TT_TWITTER_USER_AGENT": "Mozilla/5.0 (Wayland; Linux x86_64; System76) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.180 Safari/537.36 Ubuntu/23.04 (6.0.2979.18-1) Vivaldi/6.0.2979.18",
-    "TT_HOST_INSTANCE": "",
-    "TT_APP_SECURE_TOKEN": "",
+    "TT_TWITTER_GUEST_TOKEN": "AAAAAAAAAAAAAAAAAAAAAFQODgEAAAAAVHTp76lzh3rFzcHbmHVvQxYYpTw%3DckAlMINMjmCwxUcaXbAN4XqJVdgMJaHqNOFgPMK0zN1qLqLQCF",
+    "TT_TWITTER_USER_AGENT": "Mozilla/5.0 (Wayland; Linux x86_64; System76) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.137 Safari/537.36 Ubuntu/23.04 (6.1.3035.100-1) Vivaldi/6.1.3035.100",
+    "TT_HOST_INSTANCE": "https://example.com",
+    "TT_APP_SECURE_TOKEN": "AWOOGGA",
     "TT_STRIP_URLS": "No"
 }
