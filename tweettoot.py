@@ -37,52 +37,31 @@ class TweetToot:
     twitter_session_headers = {}
 
     graphql_variables = {
-        'cursor': None,
-        'referrer': 'tweet',
-        "includeHasBirdwatchNotes": False
+        "withCommunity": False,
+        "includePromotedContent": False,
+        "withVoice": False
     }
 
     graphql_features = {
-        "android_graphql_skip_api_media_color_palette": False,
-        "blue_business_profile_image_shape_enabled": False,
-        "creator_subscriptions_subscription_count_enabled": False,
-        "creator_subscriptions_tweet_preview_api_enabled": True,
-        "freedom_of_speech_not_reach_fetch_enabled": False,
+        "creator_subscriptions_tweet_preview_api_enabled": False,
+        "tweetypie_unmention_optimization_enabled": False,
+        "responsive_web_edit_tweet_api_enabled": True,
         "graphql_is_translatable_rweb_tweet_is_translatable_enabled": False,
-        "hidden_profile_likes_enabled": False,
-        "highlights_tweets_tab_ui_enabled": False,
-        "interactive_text_enabled": False,
-        "longform_notetweets_consumption_enabled": True,
-        "longform_notetweets_inline_media_enabled": False,
-        "longform_notetweets_richtext_consumption_enabled": True,
+        "view_counts_everywhere_api_enabled": False,
+        "longform_notetweets_consumption_enabled": False,
+        "responsive_web_twitter_article_tweet_consumption_enabled": False,
+        "tweet_awards_web_tipping_enabled": False,
+        "freedom_of_speech_not_reach_fetch_enabled": False,
+        "standardized_nudges_misinfo": False,
+        "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": False,
         "longform_notetweets_rich_text_read_enabled": False,
-        "responsive_web_edit_tweet_api_enabled": False,
-        "responsive_web_enhance_cards_enabled": False,
-        "responsive_web_graphql_exclude_directive_enabled": True,
+        "longform_notetweets_inline_media_enabled": False,
+        "responsive_web_graphql_exclude_directive_enabled": False,
+        "verified_phone_label_enabled": False,
+        "responsive_web_media_download_video_enabled": False,
         "responsive_web_graphql_skip_user_profile_image_extensions_enabled": False,
         "responsive_web_graphql_timeline_navigation_enabled": False,
-        "responsive_web_media_download_video_enabled": False,
-        "responsive_web_text_conversations_enabled": False,
-        "responsive_web_twitter_article_tweet_consumption_enabled": False,
-        "responsive_web_twitter_blue_verified_badge_is_enabled": True,
-        "rweb_lists_timeline_redesign_enabled": True,
-        "spaces_2022_h2_clipping": True,
-        "spaces_2022_h2_spaces_communities": True,
-        "standardized_nudges_misinfo": False,
-        "subscriptions_verification_info_enabled": True,
-        "subscriptions_verification_info_reason_enabled": True,
-        "subscriptions_verification_info_verified_since_enabled": True,
-        "super_follow_badge_privacy_enabled": False,
-        "super_follow_exclusive_tweet_notifications_enabled": False,
-        "super_follow_tweet_api_enabled": False,
-        "super_follow_user_api_enabled": False,
-        "tweet_awards_web_tipping_enabled": False,
-        "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": False,
-        "tweetypie_unmention_optimization_enabled": False,
-        "unified_cards_ad_metadata_container_dynamic_card_content_query_enabled": False,
-        "verified_phone_label_enabled": False,
-        "vibe_api_enabled": False,
-        "view_counts_everywhere_api_enabled": False
+        "responsive_web_enhance_cards_enabled": False
     }
 
     def __init__(
@@ -152,7 +131,7 @@ class TweetToot:
         self.twitter_session_headers['content-type'] = 'application/json'
         self.twitter_session_headers['Referer'] = 'https://twitter.com/'
 
-        self.graphql_variables['focalTweetId'] = self.twitter_url.split(
+        self.graphql_variables['tweetId'] = self.twitter_url.split(
             "/")[-1].split("?")[0]
 
         params = {'variables': self.graphql_variables,
@@ -160,14 +139,14 @@ class TweetToot:
         params = urllib.parse.urlencode({k: json.dumps(v, separators=(
             ',', ':')) for k, v in params.items()}, quote_via=urllib.parse.quote)
 
-        endpoint = 'https://twitter.com/i/api/graphql/83h5UyHZ9wEKBVzALX8R_g/ConversationTimelineV2'
+        endpoint = 'https://twitter.com/i/api/graphql/0hWvDhmW8YQ-S_ib3azIrw/TweetResultByRestId'
 
         resp = session.get(
             endpoint, headers=self.twitter_session_headers, params=params)
 
         resp = json.loads(resp.text)
 
-        tweet = resp['data']['timeline_response']['instructions'][0]['entries'][0]['content']['content']
+        tweet = resp['data']
 
         tweet_text = ""
         tweet_media = []
