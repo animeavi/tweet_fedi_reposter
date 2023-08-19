@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from mastodon import Mastodon
+from pathlib import Path
 import codecs
 import helpers
 import html
@@ -13,6 +14,7 @@ import os.path
 import random
 import re
 import requests
+import shutil
 import string
 import tempfile
 import time
@@ -45,7 +47,7 @@ class TweetToot:
     graphql_features = {
         "creator_subscriptions_tweet_preview_api_enabled": False,
         "tweetypie_unmention_optimization_enabled": False,
-        "responsive_web_edit_tweet_api_enabled": True,
+        "responsive_web_edit_tweet_api_enabled": False,
         "graphql_is_translatable_rweb_tweet_is_translatable_enabled": False,
         "view_counts_everywhere_api_enabled": False,
         "longform_notetweets_consumption_enabled": False,
@@ -94,6 +96,10 @@ class TweetToot:
         abspath = os.path.abspath(__file__)
         dname = os.path.dirname(abspath)
         os.chdir(dname)
+
+        # cleanup
+        if os.path.exists('output') and os.path.isdir('output'):
+            shutil.rmtree('output')
 
         self.tweet_user_name = self.twitter_url.split(
             "twitter.com/")[-1].split("/")[0]
@@ -150,6 +156,7 @@ class TweetToot:
 
         tweet_text = ""
         tweet_media = []
+        tweet_video = []
         not_found = False
 
         tombstone = tweet['tweetResult']['result']['__typename'] == "TweetTombstone"
@@ -172,6 +179,7 @@ class TweetToot:
 
                 tweet_text = self.filter_text(None, self.get_twoot_text(twoot_json), self.strip_urls)
                 tweet_media = twoot_json["photos"]
+                tweet_video = twoot_json["video"]
 
                 # cleanup
                 os.remove("twoot.log")
@@ -180,7 +188,7 @@ class TweetToot:
                 not_found = True
 
         if not_found:
-            logger.error("Tweet deleted, not accessible or 18+!")
+            logger.error("Tweet not found!")
             exit(1)
 
         # Only initialize the Mastodon API if we find something
@@ -190,10 +198,17 @@ class TweetToot:
         )
 
         media_ids = []
+
         for media in tweet_media:
             media_id = self.transfer_media(media, mastodon_api)
             if (media_id != -1):
                 media_ids.append(media_id)
+
+        for video_path in tweet_video:
+            media_id = self.transfer_video_local(video_path, mastodon_api)
+            if (media_id != -1):
+                media_ids.append(media_id)
+
         post_id = -1
         post_id = self.post_tweet(media_ids, tweet_text, mastodon_api)
         if (post_id != -1):
@@ -288,6 +303,24 @@ class TweetToot:
                 text = text.replace(url['url'], url['expanded_url'])
 
         return text
+
+    def transfer_video_local(self, media_path, mastodon_api):
+        media_id = -1
+
+        media_path = Path(media_path)
+        temp_file_read = open(media_path, 'rb')
+
+        logger.info(
+            self.logger_prefix +
+            "Uploading " +
+            str(media_path) +
+            " to " +
+            self.mastodon_url)
+
+        media_id = mastodon_api.media_post(temp_file_read, mime_type="video/mp4")["id"]
+
+        temp_file_read.close()
+        return media_id
 
     def transfer_media(self, media_url, mastodon_api):
         media_id = -1
