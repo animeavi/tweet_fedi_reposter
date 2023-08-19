@@ -152,7 +152,13 @@ class TweetToot:
         tweet_media = []
         not_found = False
 
-        if not tweet['tweetResult']['result']['__typename'] == "TweetTombstone":
+        tombstone = tweet['tweetResult']['result']['__typename'] == "TweetTombstone"
+        nsfw = tweet['tweetResult']['result']['__typename'] == "TweetUnavailable" and tweet['tweetResult']['result']['reason'] == "NsfwLoggedOut"
+
+        if nsfw:
+            logger.warn(self.logger_prefix + "NSFW tweet detected!")
+
+        if not nsfw and not tombstone:
             tweet = tweet['tweetResult']['result']['legacy']
 
             tweet_text = self.filter_text(tweet, self.get_tweet_text(tweet), self.strip_urls)
