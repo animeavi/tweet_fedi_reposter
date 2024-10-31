@@ -1,8 +1,8 @@
 diff --git a/tweettoot.py b/tweettoot.py
-index 31816f2..b02b26f 100644
+index d491a01..08d80ae 100644
 --- a/tweettoot.py
 +++ b/tweettoot.py
-@@ -139,7 +139,8 @@ class TweetToot:
+@@ -197,7 +196,8 @@ class TweetToot:
          # Only initialize the Mastodon API if we find something
          mastodon_api = Mastodon(
              access_token=self.mastodon_token,
@@ -12,7 +12,7 @@ index 31816f2..b02b26f 100644
          )
  
          media_ids = []
-@@ -215,7 +216,8 @@ class TweetToot:
+@@ -280,7 +280,8 @@ class TweetToot:
          elif 'text' in tweet:
              text = tweet['text']
  
@@ -22,7 +22,17 @@ index 31816f2..b02b26f 100644
  
          if 'media' in entities:
              remove_media_url = entities['media'][0]['url']
-@@ -272,6 +274,7 @@ class TweetToot:
+@@ -290,7 +291,8 @@ class TweetToot:
+     def get_twoot_text(self, twoot_json):
+         text = twoot_json["tweet_text"]
+ 
+-        text = "RT @" + self.tweet_user_name + ": " + text
++        text = "<a href=\"" + self.twitter_url + \
++            "\">RT</a> @" + self.tweet_user_name + ": " + text
+ 
+         return text
+ 
+@@ -368,6 +370,7 @@ class TweetToot:
              media_ids=media_ids,
              visibility="public",
              sensitive=False,
@@ -30,12 +40,13 @@ index 31816f2..b02b26f 100644
              spoiler_text=None,
              in_reply_to_id=None
          )
-@@ -285,6 +288,7 @@ class TweetToot:
+@@ -381,7 +384,8 @@ class TweetToot:
      def escape_usernames(self, text):
          ats = re.findall(self.twitter_username_re, text)
          for at in ats:
 -            text = text.replace("@" + at, "@*" + at)
 +            text = text.replace(
-+                "@"+at, "<a href=\"https://twitter.com/"+at+"\">@"+at+"@twitter.com</a>")
++                "@"+at, "<a href=\"https://x.com/"+at+"\">@"+at+"@x.com</a>")
  
          return text
+ 

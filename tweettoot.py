@@ -22,6 +22,7 @@ import urllib.parse
 
 logger = logging.getLogger(__name__)
 
+USE_AUTH = False # Support basic HTTP auth
 
 class TweetToot:
     app_name = ""
@@ -50,7 +51,7 @@ class TweetToot:
         "responsive_web_edit_tweet_api_enabled": False,
         "graphql_is_translatable_rweb_tweet_is_translatable_enabled": False,
         "view_counts_everywhere_api_enabled": False,
-        "longform_notetweets_consumption_enabled": False,
+        "longform_notetweets_consumption_enabled": True,
         "responsive_web_twitter_article_tweet_consumption_enabled": False,
         "tweet_awards_web_tipping_enabled": False,
         "freedom_of_speech_not_reach_fetch_enabled": False,
@@ -87,7 +88,7 @@ class TweetToot:
             'Connection': 'keep-alive',
             'User-Agent': twitter_user_agent,
             'Accept': '*/*',
-            'Referer': 'https://twitter.com',
+            'Referer': 'https://x.com',
             'Accept-Language': 'en-US,en;q=0.5',
             'Accept-Encoding': 'gzip, deflate, br'}
 
@@ -102,7 +103,7 @@ class TweetToot:
             shutil.rmtree('output')
 
         self.tweet_user_name = self.twitter_url.split(
-            "twitter.com/")[-1].split("/")[0]
+            "x.com/")[-1].split("/")[0]
 
         logger.info(
             self.logger_prefix +
@@ -161,6 +162,7 @@ class TweetToot:
 
         tombstone = tweet['tweetResult']['result']['__typename'] == "TweetTombstone"
         nsfw = tweet['tweetResult']['result']['__typename'] == "TweetUnavailable" and tweet['tweetResult']['result']['reason'] == "NsfwLoggedOut"
+        # nsfw = True # Uncomment to force Nitter
 
         if nsfw:
             logger.warn(self.logger_prefix + "NSFW tweet detected!")
@@ -327,7 +329,13 @@ class TweetToot:
 
         logger.info(self.logger_prefix + "Downloading " + media_url)
 
-        media_file = requests.get(media_url, stream=True)
+        s = requests.Session()
+        s.headers.update({'User-Agent': self.twitter_user_agent})
+
+        if USE_AUTH:
+            s.auth = ("root", "hunter2")
+
+        media_file = s.get(media_url, stream=True)
         media_file.raw.decode_content = True
 
         temp_file = tempfile.NamedTemporaryFile(delete=False)
